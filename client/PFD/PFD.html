@@ -1,0 +1,23 @@
+<template name="PFD">
+  <div id="PFD" class="vbox">
+    {{> speedo left=10 top=10}}
+    {{> altimeter left=550 top=10}}
+    {{> vario}}
+    {{> ROC}}
+  </div>
+</template>
+
+
+<template name="PFD-Obsolete">
+  <div class="hbox" style="position:relative;">
+    <div id="PFD" class="vbox">
+      {{> speedo left=10 top=10}}
+      {{> altimeter left=550 top=10}}
+      {{> vario}}
+      {{> ROC}}
+    </div>
+    <div id="engine-panel" class="vbox">
+      {{> control_panel}}
+    </div>
+  </div>
+</template>

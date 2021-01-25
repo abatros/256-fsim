@@ -1,0 +1,71 @@
+<template name="xp_103_clock">
+
+  <head>
+
+      <!--
+      <script src="//cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.23.1/babel.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/d3/4.6.0/d3.min.js"></script>
+      <script src="//unpkg.com/d3-radial-axis@1.5/dist/d3-radial-axis.min.js"></script>
+      <link rel="stylesheet" href="style.css">
+      -->
+
+      <style media="screen">
+        div.body {
+      text-align: center;
+      font-family: Sans-serif;
+      margin: 0;
+  }
+
+  .background {
+      stroke-width: 0;
+      fill: Lavender;
+      fill-opacity: 0.3;
+  }
+
+  .axis .domain, .axis .tick line {
+      stroke-width: 2px;
+      stroke: DarkSlateGrey;
+  }
+
+  .axis .tick:first-of-type {
+      display: none; // hide 0 tick
+  }
+
+  .axis .tick text {
+      font-size: 16px;
+  }
+
+  .minor-ticks text, .minor-ticks path {
+      display: none;  // Hide all but ticks
+  }
+
+  .pointers rect {
+      fill-opacity: 0.7;
+  }
+
+  .pointers .hour, .pointers .min {
+      fill: green;
+  }
+
+  .pointers .sec {
+      fill: red;
+  }
+
+  .pointers .center {
+      fill: darkgrey;
+  }
+
+      </style>
+
+
+  </head>
+
+  <div class="body">
+      <svg id="canvas"></svg>
+
+      <script type="text/babel" src="index.js"></script>
+  </div>
+
+
+
+</template>

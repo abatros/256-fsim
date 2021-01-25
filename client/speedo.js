@@ -1,5 +1,5 @@
 import './speedo.html';
-
+import {Integrator, Cosine, xacc, roc} from './app.js';
 
 const TP = Template.speedo
 
@@ -11,7 +11,24 @@ const height = 800;
 // TAKE i.y_
 
 let one_shoot = 0;
+const step = false;
 
+
+// --------------------------------------------------------------------------
+
+TP.helpers({
+  data: ()=>{
+    const tp = Template.instance();
+    const data = tp.data;
+    console.log(`helper data [${data.id}] x:${data.x} y:${data.y}`,{data})
+    return tp.data;
+  },
+  style: ()=>{
+    return 'position:absolute;'
+  }
+})
+
+// --------------------------------------------------------------------------
 
 TP.onRendered(function () {
 
@@ -27,7 +44,7 @@ TP.onRendered(function () {
   INFO : digital display for speed.
   **********************************/
 
-  const info = d3.select("#info")
+  const info = d3.select("#info-speedo")
       .attr('width',100)
       .attr('height',30)
       .style('background-color', 'lightgreen')
@@ -37,7 +54,7 @@ TP.onRendered(function () {
 
   const speed_info = g2.append('text')
   .attr('x',10)
-  .attr('y', 20)
+  .attr('y', DS)
   .attr("text-anchor", "start")
   .style("fill", "steelblue")
   .style("font-family","helvetica")
@@ -51,97 +68,21 @@ TP.onRendered(function () {
   **********************************/
 
 
-  const bplus = d3.select("body")
-      .append('svg')
-      .attr('width',200)
-      .attr('height',200)
-      .style('background-color', 'orange')
-      .attr("transform", `translate(300,0)`) // dash position
-      .append('g')
-
-
-  bplus.append('rect')
-      .attr('x',50)
-      .attr('y', 100) // 5*20 = 100 ATTENTION.
-      .attr('height',30)
-      .attr('width',40)
-      .style("stroke", "red")
-      .style("fill", "orange")
-      .on('mouseover', function(){
-        d3.select(this)
-        .style("fill", "lightgreen")
-      })
-      .on("mouseout", function(){
-        d3.select(this)
-       .style("fill", "steelblue")
-      })
-     .on('click', function() {
-       d3.select(this)
-       .style("fill", "red")
-       console.log('click-plus')
-       one_shoot = 1;
-     })
-
-   bplus.append('text')
-     .attr('x',62)
-     .attr('y',122)
-   //  .attr("text-anchor", "start")
-     .style("font-family","helvetica")
-     .style("font-weight","bold")
-     .style("font-size","28px")
-     .style("fill", "white")
-     .text('+')
-
-
-
-  const bminus = d3.select("body")
-     .append('svg')
-     .attr('width',200)
-     .attr('height',200)
-     .style('background-color', 'orange')
-     .attr("transform", `translate(300,0)`) // dash position
-     .append('g')
-
-
-  bminus.append('rect')
-     .attr('x',50)
-     .attr('y', 100) // 5*20 = 100 ATTENTION.
-     .attr('height',30)
-     .attr('width',40)
-     .style("stroke", "blue")
-     .style("fill", "orange")
-     .on('mouseover', function(){
-       d3.select(this)
-       .style("fill", "lightgreen")
-     })
-     .on("mouseout", function(){
-       d3.select(this)
-      .style("fill", "steelblue")
-     })
-    .on('click', function() {
-      d3.select(this)
-      .style("fill", "red")
-      console.log('click-minus')
-      one_shoot = -1;
-    })
-
-  bminus.append('text')
-  .attr('x',65)
-  .attr('y',122)
-//  .attr("text-anchor", "start")
-  .style("font-family","helvetica")
-  .style("font-weight","bold")
-  .style("font-size","28px")
-  .style("fill", "white")
-  .text('-')
-
+/*
+  .on('click', function() {
+          d3.select(this)
+          .style("fill", "red")
+          console.log('click-stop')
+          t1.stop();
+        })
+*/
 
   /*********************************
   speedometer - ruler
   paint the tape.
   **********************************/
 
-  const svg2 = d3.select("#svg")
+  const svg2 = d3.select("#svg-speedo")
     .attr('width',width)
     .attr('height',height)
     .style('background-color', 'lightgreen');
@@ -154,16 +95,23 @@ TP.onRendered(function () {
     // each line
     g1.append('rect')
       .attr('x',38)
-      .attr('y', -DV +j*DV) // 5*20 = 100 ATTENTION.
+      .attr('y', j*DV) // 5*20 = 100 ATTENTION.
+      .attr('height',2)
+      .attr('width',18)
+
+    g1.append('rect')
+      .attr('x',46)
+      .attr('y', j*DV + 0.5*DV) // 5*20 = 100 ATTENTION.
       .attr('height',2)
       .attr('width',10)
+
   }
 
 
   for (let j=0; j<ND; j++) {
     vt[j] = g1.append('text')
       .attr('x',35)
-      .attr('y', -DV +j*DV +6)
+      .attr('y', j*DV +6)
       .attr("text-anchor", "end")
       .style("fill", "steelblue")
       .style("font-family","helvetica")
@@ -173,59 +121,29 @@ TP.onRendered(function () {
   }
 
 
-  const t1 = d3.timer(every_dt);
-
-  d3.timeout(() => {
-    console.log('timeout 2500 ms.')
-    //t1.stop()
-  }, 3*1000);
-
-
-  // ----------------------------------------------------------------------------
-
-  function Cosine(K) {
-    const i = this;
-    i.K =K;
-    i.x = 0;
-    i.y = K*(K-1);
-    return i;
-  }
-
-
-  Cosine.prototype.dt = function(dt) {
-    const i = this;
-    if (dt>0) {
-      i.x += Math.floor(i.y/i.K)
-      i.y -= Math.floor(i.x/i.K)
-    } else {
-      i.y += Math.floor(i.x/i.K)
-      i.x -= Math.floor(i.y/i.K)
-    }
-    return i;
-  }
-
-  Cosine.prototype.trace = function() {
-    const i = this;
-    console.log(`x:${Math.floor(i.x/i.K)} y:${Math.floor(i.y/i.K)}`)
-    return i;
-  }
 
 
 
   // ----------------------------------------------------------------------------
 
-  let etime=0;
-  const a = new Cosine(256);
+
+
+
+  // ----------------------------------------------------------------------------
+
+  let nframes=0;
+
 
 
   svg2.append('rect')
-    .style("stroke", "red")
+    .style("fill", "red")
   //  .style("stroke-width", 1)
-    .attr("x", 48)
+    .attr("x", 49)
     .attr("y", height/2)
     .attr("width", 10)
-    .attr("height",1);
+    .attr("height",2);
 
+    /*
   const line1 = svg2.append('line')
     .style("stroke", "red")
     .style("stroke-width", 1)
@@ -233,78 +151,117 @@ TP.onRendered(function () {
     .attr("y1", height/2 - Math.floor(a.x/a.K))
     .attr("x2", 80)
     .attr("y2", height/2 -  Math.floor(a.x/a.K));
+    */
 
 
-  function every_dt() {
+  let average_etime =0;
+  let _atime_ =0;
+  xacc.v.x = 0.5*xacc.v.K; // initial acceleration from THRUST.
 
+  function every_frame(_atime) {
 
-    if (one_shoot != 0) {
-      a.dt(one_shoot); // dv
-      one_shoot = 0
-    } else {
-      return;
-    }
+    const stime = new Date().getTime();
+    _etime = _atime-_atime_;
+    average_etime = (4*average_etime + 6*_etime)/10
+    _atime_ = _atime;
+//    console.log({_etime},{average_etime})
 
-
-//    a.dt(); // dv
-    let v = 3*Math.floor(a.x/(a.K)); // 0-256
 
     /*
-    if (etime%10 == 0) {
-      speed_info.text(v)
+    if (bStop.click_Count%2 ==0) {
+      return;
+    }*/
+
+    roc.Lift = xacc.v2.y
+
+    /*
+    try {
+      const dv = xacc.pulse();
+      if (dv) {
+        // changed
+    //    roc.x -= xacc.v2.dy // Lift.
+        roc.Lift = xacc.v2.y
+      }
+    }
+
+    catch(err) {
+      console.log({err})
+      xacc.trace(`@239`)
+      t1.stop();
+      return;
     }*/
 
 
-    speed_info.text(v)
+    const v = xacc.v.y; // 1/3 kt == pixels
 
 
-    /*
-      a.x/256 => [0,256] too small for height 800 px
-      a.x/128 => [0,512] +/- => 1024 ok.
-    */
+    speed_info.text(Math.floor(v/3))
 
-//    const v = 2200 + Math.floor(a.x/a.K); // 0-256
-//    const vv = 500 + Math.floor(a.x/(a.K/2)); // 0-256
-    const vv = 512 + v
+    // from here we can compute in pixels
+    let v_floor = Math.floor(v/60)*60; // 1/3 kt !
 
-    /*
-      translate the group by [0 - DV:100] pixels, then print the right numbers
-      == translate the GRID
-    */
+    const nd = Math.ceil((height/2)/60);
+
+    const dy = -60 + v%60 + (height/2)%60
+    g1.attr("transform", `translate(0,${dy})`) // first dash position (<= 0)
 
 
-  //  v =0;
-    let voff = (height/2)%DV; // WRONG
-    // first dash position
-    g1.attr("transform", `translate(0,${Math.floor(v/20)*60+ voff})`) // dash position
-//    g1.attr("transform", `translate(0,100)`) // dash position
+    if (step) {
+      console.log(`V:${Math.floor(v/3)}`,{v},{v_floor})
+    }
 
-      // for every 20 dy, recompute the numbers on the rule.
 
-//    let zero_ = Math.floor(v/DV) + 20*6;
-    let zero_ = Math.floor(v/20)*20 + 20*5; // speed at the first dash.
 
-    console.log(`g.y:${v%DV}`,{zero_},{DV},{ND},{voff},{v})
+
+    const r = Math.floor(DV/DS);
     for (let j=0; j<ND; j++) {
-        //vt[j].text(`${h_*100 - j*100}`)
-        vt[j].text(`${(zero_ - j*20)}`) // speed
-  //        .style("font-family","helvetica")
-
+      if (v>=0)
+        vt[j].text(`${(Math.floor(v_floor/r) + (nd)*DS - j*DS)}`) // speed
+      else {
+        if (v%60 ==0) {
+          // TRICKY SNEAKY
+          vt[j].text(`${(Math.floor(v_floor/r) + (nd)*DS - j*DS)}`) // speed
+        } else {
+          vt[j].text(`${(Math.floor(v_floor/r) + (nd+1)*DS - j*DS)}`) // speed
+        }
       }
+    }
 
+
+    const text0 = Math.floor((v_floor)/3) +nd*DS; // speed at first tick.
+
+
+
+
+    if ( v == -60) {
+//      t1.stop()
+
+    }
 
 
     // -----------------------------------------------------------------------
 //    t1.stop()
 
-  /*
-    if (etime >20) {
+    if (!step && (nframes > 600*(1000/17))) {
       console.log(`stop@108`)
       t1.stop()
     }
-    */
-    etime += 1; // chaque frame
-  }
+    nframes += 1; // chaque frame ~~ 17 ms. NFRAMES
+    const pTime = new Date().getTime() - stime;
+    //console.log({nframes},{_atime},{_etime},{average_etime},{pTime})
+    if (pTime >=15) {
+      console.log(`ALERT OVERHEAT COMPUTER  p-Time : ${pTime}`)
+      t1.stop();
+    }
+  } // every_frame
+
+
+  const t1 = d3.timer(every_frame);
+
+  d3.timeout(() => {
+    console.log('timeout 2500 ms.')
+    //t1.stop()
+  }, 60*1000);
 
 
   function drawPoint(p) {

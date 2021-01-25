@@ -1,9 +1,42 @@
 <head>
   <title>256-fsim</title>
   <script src="http://d3js.org/d3.v5.min.js"></script>
-
 </head>
 
-<body>
-  {{> speedo}}
+
+<body style="background-color:orange;">
 </body>
+
+
+<template name="main_page">
+<div class="" style="width:1360px; height:780px; background-color:rgb(150,150,150); margin:auto;">
+  <div id="top-panel" class="top-panel"
+    style="height:40px; border:1px dashed blue;">
+  </div>
+
+  <div class="hbox" style="position:relative;">
+  {{> PFD}}
+
+  <div id="engine-panel" class="vbox">
+    {{> control_panel}}
+  </div>
+
+  </div>
+
+
+  {{!--
+    <div class="hbox" style="position:relative;">
+      <div id="PFD" class="vbox">
+        {{> speedo left=10 top=10}}
+        {{> altimeter left=550 top=10}}
+        {{> vario}}
+        {{> ROC}}
+      </div>
+      <div id="engine-panel" class="vbox">
+        {{> control_panel}}
+      </div>
+    </div>
+  --}}
+</div>
+
+</template>
